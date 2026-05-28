@@ -1,7 +1,10 @@
 import logging
 import re
 from pathlib import Path
+
 from pypdf import PdfReader
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 from app.core.config import get_settings
 from app.clients.ai_client import ask_ai_with_context
@@ -103,14 +106,50 @@ def load_document_chunks() -> list[dict]:
     return all_chunks
 
 def extract_keywords(text: str) -> list[str]:
-    english_words = re.findall(r"[A-Za-z0-9]+", text.lower())
+    lower_text = text.lower()
 
-    chinese_chars = [
-        char for char in text
-        if "\u4e00" <= char <= "\u9fff"
+    english_words = [
+        word
+        for word in re.findall(r"[A-Za-z0-9]+", lower_text)
+        if len(word) >= 2
     ]
 
-    return english_words + chinese_chars
+    domain_terms = [
+        "人工智能",
+        "未来",
+        "变化",
+        "教育",
+        "学习",
+        "办公",
+        "工作",
+        "职业",
+        "能力",
+        "知识库",
+        "大模型",
+        "多模态",
+        "应用工程",
+        "应用工程师",
+        "后端",
+        "接口",
+        "工具调用",
+        "fastapi",
+        "rag",
+        "tool calling",
+        "openai",
+        "pydantic",
+        "agent",
+        "api",
+    ]
+
+    matched_terms = []
+
+    for term in domain_terms:
+        if term in lower_text:
+            matched_terms.append(term)
+
+    keywords = english_words + matched_terms
+
+    return list(dict.fromkeys(keywords))
 
 def retrieve_relevant_chunks(
     question: str,
@@ -118,6 +157,8 @@ def retrieve_relevant_chunks(
     top_k: int = 3,
 ) -> list[dict]:
     keywords = extract_keywords(question)
+
+    logger.info("RAG 检索关键词：%s", keywords)
 
     scored_chunks = []
 
@@ -144,6 +185,40 @@ def retrieve_relevant_chunks(
     return scored_chunks[:top_k]
 
 
+def retrieve_relevant_chunks_by_tfidf(
+    question: str,
+    chunks: list[dict],
+    top_k: int = 3,
+) -> list[dict]:
+    if not chunks:
+        return []
+    
+    documents = [chunk["content"] for chunk in chunks]
+
+    vectorizer = TfidfVectorizer(
+        analyzer="char",
+        ngram_range=(2, 4),
+    )
+    document_vectors = vectorizer.fit_transform(documents)
+    question_vector = vectorizer.transform([question])
+
+    similarities = cosine_similarity(question_vector, document_vectors)[0]
+
+    scored_chunks = []
+
+    for index, score in enumerate(similarities):
+        if score > 0:
+            scored_chunks.append(
+                {
+                    "score": float(score),
+                    "source": chunks[index]["source"],
+                    "content": chunks[index]["content"],
+                }
+            )
+    scored_chunks.sort(key=lambda item: item["score"], reverse=True)
+
+    return scored_chunks[:top_k]
+
 def ask_with_rag(message: str) -> tuple[str, list[str]]:
     logger.info("开始执行 RAG 问答")
 
@@ -154,7 +229,7 @@ def ask_with_rag(message: str) -> tuple[str, list[str]]:
     if not chunks:
         return "没有找到可用的知识库文档。", []
 
-    relevant_chunks = retrieve_relevant_chunks(
+    relevant_chunks = retrieve_relevant_chunks_by_tfidf(
         question=message,
         chunks=chunks,
         top_k=settings.rag_top_k
