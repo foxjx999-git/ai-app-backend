@@ -1,0 +1,5 @@
+FastAPI 是一个用于构建 Web API 的现代 Python 框架。它支持类型提示、自动生成接口文档，并且常用于 AI 应用后端开发。
+
+在 AI 应用工程中，FastAPI 常用于封装大模型调用、RAG 问答、Tool Calling 工具调用和前端接口。
+
+FastAPI 的核心优势包括开发速度快、接口文档自动生成、与 Pydantic 深度结合，以及适合构建微服务和后端 API。

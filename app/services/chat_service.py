@@ -15,7 +15,7 @@ def process_chat(request: ChatRequest) -> ChatResponse:
 
     elif request.use_rag:
         mode = "rag"
-        answer = ask_with_rag(message)
+        answer, sources = ask_with_rag(message)
 
     elif request.use_tools:
         mode = "tools"
@@ -29,4 +29,5 @@ def process_chat(request: ChatRequest) -> ChatResponse:
         answer=answer,
         mode=mode,
         tool_result=tool_result,
+        sources=sources,
     )

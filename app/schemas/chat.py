@@ -9,3 +9,4 @@ class ChatResponse(BaseModel):
     answer: str
     mode: str
     tool_result: dict | None = None
+    sources: list[str] | None = None

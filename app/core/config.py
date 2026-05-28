@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
 
     learning_log_file: str = "learning_log.json"
+    docs_dir: str = "data/docs"
+    rag_top_k: int = 3
 
     model_config = SettingsConfigDict(
         env_file=".env",

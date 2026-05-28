@@ -82,7 +82,7 @@ POST /api/chat
 
 ### 4. 查询学习记录
 
-``text
+```text
 GET /api/logs
 ```
 

@@ -1,0 +1,7 @@
+人工智能时代，普通人需要提升三类能力：AI 工具使用能力、行业理解能力和持续学习能力。
+
+AI 应用工程师需要掌握后端接口开发、Prompt 设计、RAG 知识库问答、Tool Calling、日志记录、配置管理和部署能力。
+
+RAG 是 Retrieval-Augmented Generation 的缩写，意思是检索增强生成。它会先从文档或知识库中检索相关内容，再把检索到的内容交给大模型生成回答。
+
+对于转行学习 AI 应用工程师的人来说，先掌握 FastAPI、Pydantic、OpenAI API、RAG 和 Tool Calling 是比较合理的路线。
