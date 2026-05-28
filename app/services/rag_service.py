@@ -1,6 +1,7 @@
 import logging
 import re
 from pathlib import Path
+from pypdf import PdfReader
 
 from app.core.config import get_settings
 from app.clients.ai_client import ask_ai_with_context
@@ -8,15 +9,43 @@ from app.clients.ai_client import ask_ai_with_context
 logger = logging.getLogger(__name__)
 
 def split_text_into_chunks(text: str) -> list[str]:
+    text =text.strip()
+
+    if not text:
+        return []
+    
+    paragraphs = re.split(r"\n\s*\n",text)
+
     chunks = []
 
-    for paragraph in text.split("\n\n"):
+    for paragraph in paragraphs:
         paragraph = paragraph.strip()
 
         if paragraph:
             chunks.append(paragraph)
 
-    return chunks
+    if chunks:
+        return chunks
+
+    return [text]
+
+def read_pdf_text(file_path: Path) -> str:
+    try:
+        reader = PdfReader(str(file_path))
+
+        pages_text = []
+
+        for page in reader.pages:
+            text = page.extract_text()
+
+            if text:
+                pages_text.append(text)
+
+        return "\n\n".join(pages_text)
+    
+    except Exception as e:
+        logger.error("读取 PDF 失败，文件=%s，错误=%s", file_path.name, str(e))
+        return ""
 
 def load_document_chunks() -> list[dict]:
     settings = get_settings()
@@ -34,11 +63,33 @@ def load_document_chunks() -> list[dict]:
     
     all_chunks = []
 
-    for file_path in docs_dir.glob("*txt"):
-        logger.info("读取文档：%s", file_path)
+    for file_path in docs_dir.iterdir():
+        if file_path.suffix.lower() not in[".txt", ".pdf"]:
+            continue
 
-        text = file_path.read_text(encoding="utf-8")
+        logger.info("读取文档：%s", file_path)
+        try:
+            if file_path.suffix.lower() == ".txt":
+                text = file_path.read_text(encoding="utf-8")
+
+            elif file_path.suffix.lower() == ".pdf":
+                text = read_pdf_text(file_path)
+
+            else:
+                continue
+        except Exception as e:
+            logger.error("读取文档失败，文件=%s，错误=%s", file_path.name, str(e))
+            continue
+
+        logger.info("文档文本长度：%s，文件：%s", len(text), file_path.name)
+
+        if not text.strip():
+            logger.warning("文档内容为空，跳过文件：%s", file_path.name)
+            continue
+
         chunks = split_text_into_chunks(text)
+
+        logger.info("文档切分片段数量：%s，文件：%s", len(chunks), file_path.name)
 
         for chunk in chunks:
             all_chunks.append(
@@ -92,27 +143,6 @@ def retrieve_relevant_chunks(
 
     return scored_chunks[:top_k]
 
-def load_documents() -> str:
-    settings = get_settings()
-    
-    project_root = Path(__file__).resolve().parents[2]
-    docs_dir = project_root / settings.docs_dir
-
-    if not docs_dir.exists():
-        logger.warning("文档目录不存在：%s", docs_dir)
-        return "",[]
-    
-    all_text = []
-    sources = []
-
-    for file_path in docs_dir.glob("*.txt"):
-        logger.info("读取文档：%s", file_path)
-
-        text = file_path.read_text(encoding="utf-8")
-        all_text.append(text)
-        sources.append(file_path.name)
-
-    return "\n\n".join(all_text), sources
 
 def ask_with_rag(message: str) -> tuple[str, list[str]]:
     logger.info("开始执行 RAG 问答")
