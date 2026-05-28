@@ -105,84 +105,8 @@ def load_document_chunks() -> list[dict]:
     logger.info("成功加载文档片段数量：%s", len(all_chunks))
     return all_chunks
 
-def extract_keywords(text: str) -> list[str]:
-    lower_text = text.lower()
 
-    english_words = [
-        word
-        for word in re.findall(r"[A-Za-z0-9]+", lower_text)
-        if len(word) >= 2
-    ]
 
-    domain_terms = [
-        "人工智能",
-        "未来",
-        "变化",
-        "教育",
-        "学习",
-        "办公",
-        "工作",
-        "职业",
-        "能力",
-        "知识库",
-        "大模型",
-        "多模态",
-        "应用工程",
-        "应用工程师",
-        "后端",
-        "接口",
-        "工具调用",
-        "fastapi",
-        "rag",
-        "tool calling",
-        "openai",
-        "pydantic",
-        "agent",
-        "api",
-    ]
-
-    matched_terms = []
-
-    for term in domain_terms:
-        if term in lower_text:
-            matched_terms.append(term)
-
-    keywords = english_words + matched_terms
-
-    return list(dict.fromkeys(keywords))
-
-def retrieve_relevant_chunks(
-    question: str,
-    chunks: list[dict],
-    top_k: int = 3,
-) -> list[dict]:
-    keywords = extract_keywords(question)
-
-    logger.info("RAG 检索关键词：%s", keywords)
-
-    scored_chunks = []
-
-    for chunk in chunks:
-        content = chunk["content"].lower()
-
-        score = 0
-
-        for keyword in keywords:
-            if keyword.lower() in content:
-                score += 1
-
-        if score > 0:
-            scored_chunks.append(
-                {
-                    "score": score,
-                    "source": chunk["source"],
-                    "content": chunk["content"],
-                }
-            )
-
-    scored_chunks.sort(key=lambda item: item["score"], reverse=True)
-
-    return scored_chunks[:top_k]
 
 
 def retrieve_relevant_chunks_by_tfidf(
@@ -228,6 +152,8 @@ def ask_with_rag(message: str) -> tuple[str, list[str]]:
 
     if not chunks:
         return "没有找到可用的知识库文档。", []
+    
+    logger.info("RAG 检索方式：TF-IDF")
 
     relevant_chunks = retrieve_relevant_chunks_by_tfidf(
         question=message,
