@@ -14,8 +14,14 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
 
     learning_log_file: str = "learning_log.json"
+
     docs_dir: str = "data/docs"
     rag_top_k: int = 3
+    rag_retrieval_mode: str = "vector"
+
+    embedding_model: str = "text-embedding-3-small"
+    chroma_dir: str = "chroma_db"
+    chroma_collection_name: str = "ai_app_docs" 
 
     model_config = SettingsConfigDict(
         env_file=".env",

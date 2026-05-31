@@ -8,6 +8,7 @@ def process_chat(request: ChatRequest) -> ChatResponse:
     message = request.message.strip()
 
     tool_result = None
+    sources = None
 
     if request.use_rag and request.use_tools:
         mode = "rag_with_tools"

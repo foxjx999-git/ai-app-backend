@@ -88,6 +88,30 @@ GET /api/logs
 
 用于查询本地 JSON 文件中保存的学习记录。
 
+### 5. RAG 文档问答
+
+当 `use_rag=true` 时，系统会执行 RAG 文档问答流程。
+
+目前支持：
+
+- 读取 `.txt` 文本文档
+- 读取 `.pdf` PDF 文档
+- 文档切分为 chunks
+- TF-IDF 检索
+- ChromaDB 向量检索
+- OpenAI Embedding
+- 返回答案来源 `sources`
+
+请求示例：
+
+```json
+{
+  "message": "人工智能的未来会带来哪些变化？",
+  "use_rag": true,
+  "use_tools": false
+}
+```
+
 ## 项目结构
 
 ```text
@@ -221,6 +245,9 @@ http://127.0.0.1:8000/docs
 | GET | `/health` | 健康检查 |
 | POST | `/api/chat` | AI 对话统一入口 |
 | GET | `/api/logs` | 查询学习记录 |
+| POST | `/api/rag/build` | 构建 RAG 向量库 |
+| POST | `/api/rag/rebuild` | 重建 RAG 向量库 |
+| GET | `/api/rag/status` | 查询 RAG 当前状态 |
 
 ## 当前学习重点
 
@@ -237,6 +264,13 @@ http://127.0.0.1:8000/docs
 - 本地工具函数执行
 - JSON 文件存储
 - API 返回结构化结果
+- PDF / TXT 文档读取
+- RAG 文档切分
+- TF-IDF 文本检索
+- OpenAI Embedding
+- ChromaDB 向量数据库
+- 向量检索问答
+- RAG build / rebuild / status 管理接口
 
 ## 下一步计划
 
