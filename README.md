@@ -552,6 +552,157 @@ chroma_db/
 * 更详细的 RAG 引用片段展示
 * SQLite / PostgreSQL 存储学习记录
 * 用户登录
-* Docker 部署
-* 云端部署
 * React 前端重构
+
+## Docker 本地部署
+
+本项目已支持 Docker 方式运行后端服务。
+
+### 1. 构建 Docker 镜像
+
+```bash
+docker build -t ai-app-backend:local .
+```
+
+### 2. 启动 Docker 容器
+
+```bash
+docker run --rm -d --name ai-app-backend-local --env-file .env -p 8001:8001 ai-app-backend:local
+```
+
+### 3. 测试本地 Docker 服务
+
+健康检查：
+
+http://127.0.0.1:8001/health
+
+接口文档：
+
+http://127.0.0.1:8001/docs
+
+查看 RAG 状态：
+
+```bash
+Invoke-RestMethod http://127.0.0.1:8001/api/rag/status | ConvertTo-Json -Depth 5
+```
+
+重建 RAG 向量库：
+
+```bash
+Invoke-RestMethod -Method Post http://127.0.0.1:8001/api/rag/rebuild | ConvertTo-Json -Depth 5
+```
+
+## Render 云端部署
+
+本项目已部署到 Render Web Service。
+
+线上地址：
+
+https://ai-app-backend-6v78.onrender.com
+
+已验证接口：
+
+```text
+GET  /health
+GET  /docs
+GET  /api/rag/status
+POST /api/rag/rebuild
+POST /api/chat
+```
+
+线上健康检查地址：
+
+https://ai-app-backend-6v78.onrender.com/health
+
+
+线上接口文档：
+
+https://ai-app-backend-6v78.onrender.com/docs
+
+## Render 部署配置
+
+部署方式：
+
+```text
+Web Service + Dockerfile
+```
+
+分支：
+
+```text
+feature/rag-integration
+```
+
+Dockerfile 路径：
+
+```text
+./Dockerfile
+```
+
+Health Check Path：
+
+```text
+/health
+```
+
+## Render 环境变量
+
+Render 后台需要配置以下环境变量：
+
+```env
+APP_NAME=AI App Backend
+APP_VERSION=0.1.0
+MODEL_NAME=gpt-4.1-mini
+OPENAI_API_KEY=your_openai_api_key_here
+LEARNING_LOG_FILE=learning_log.json
+DOCS_DIR=data/docs
+RAG_TOP_K=3
+RAG_RETRIEVAL_MODE=vector
+EMBEDDING_MODEL=text-embedding-3-small
+CHROMA_DIR=chroma_db
+CHROMA_COLLECTION_NAME=ai_app_docs
+PYTHONUTF8=1
+PYTHONIOENCODING=utf-8
+```
+
+注意：
+
+- `OPENAI_API_KEY` 只配置在本地 `.env` 或 Render Environment Variables 中
+- 不要把 `.env` 上传到 GitHub
+- `chroma_db/` 不上传 GitHub，部署后通过 `/api/rag/rebuild` 在线重建向量库
+
+## 线上 RAG 初始化流程
+
+服务首次部署后，向量库可能为空，需要先调用：
+
+```text
+POST /api/rag/rebuild
+```
+
+然后检查：
+
+```text
+GET /api/rag/status
+```
+
+当返回：
+
+```json
+{
+  "vector_count": 11
+}
+```
+
+说明线上 RAG 向量库已经构建成功。
+
+## 部署状态
+
+当前项目已完成：
+
+- Docker 本地构建成功
+- Docker 本地容器运行成功
+- Render 云端部署成功
+- 线上 /health 测试通过
+- 线上 /docs 测试通过
+- 线上 RAG 向量库重建成功
+- 线上 /api/chat + use_rag=true 问答测试通过
